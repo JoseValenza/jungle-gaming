@@ -1,3 +1,4 @@
+
 package database
 
 import (
@@ -12,7 +13,6 @@ import (
 
 func NewPostgres() (*sql.DB, error) {
 	databaseURL := os.Getenv("DATABASE_URL")
-
 	if databaseURL == "" {
 		databaseURL = "postgres://jungle:jungle_dev@localhost:5432/jungle_gaming?sslmode=disable"
 	}
@@ -30,7 +30,7 @@ func NewPostgres() (*sql.DB, error) {
 	defer cancel()
 
 	if err := db.PingContext(ctx); err != nil {
-		_ = db.Close()
+		db.Close()
 		return nil, fmt.Errorf("conectar ao PostgreSQL: %w", err)
 	}
 
