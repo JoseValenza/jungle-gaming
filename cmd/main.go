@@ -16,11 +16,17 @@ func main() {
 		fx.Provide(
 			database.NewPostgres,
 			httpapi.NewHandler,
+			httpapi.NewOIDCAuth,
 		),
-		fx.Invoke(func(lifecycle fx.Lifecycle, db *sql.DB, handler http.Handler) {
+		fx.Invoke(func(
+			lifecycle fx.Lifecycle,
+			db *sql.DB,
+			handler http.Handler,
+			auth func(http.Handler) http.Handler,
+		) {
 			server := &http.Server{
 				Addr:    ":8080",
-				Handler: handler,
+				Handler: auth(handler),
 			}
 
 			lifecycle.Append(fx.Hook{
