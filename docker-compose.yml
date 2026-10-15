@@ -1,0 +1,48 @@
+﻿services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: jungle-gaming-postgres
+    environment:
+      POSTGRES_DB: jungle_gaming
+      POSTGRES_USER: jungle
+      POSTGRES_PASSWORD: jungle_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jungle -d jungle_gaming"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jungle-gaming-api
+    environment:
+      DATABASE_URL: postgres://jungle:jungle_dev@postgres:5432/jungle_gaming?sslmode=disable
+      OIDC_ISSUER_URL: http://localhost:8081/realms/jungle
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4
+    container_name: jungle-gaming-keycloak
+    command: start-dev --http-port=8080
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin_dev
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
